@@ -10,8 +10,7 @@ library(RNetCDF)
 library(chron)
 library(RColorBrewer)
 library(lattice)
-library(plyr)
-library(tidyverse)
+library(dplyr)
 library(lubridate)
 ```
 
