@@ -136,6 +136,16 @@ df <- df %>%
 
 ```
 
+# Option to add scale factor if needed, note you may need to add an offset as well
+
+```{r}
+
+df$scale_factor <- 0.0020000000949949 
+df$offset <- 65.5
+df$value <- (df$par * df$scale_factor)+df$offset
+
+```
+
 # Write Data
 
 ```{r}
