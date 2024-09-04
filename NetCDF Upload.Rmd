@@ -52,7 +52,7 @@ summary(chl.day)
 
 # Multiple files within a folder
 
-```{r}
+```{r, results = 'hide'}
 
 rm(list= ls())
 
