@@ -60,7 +60,7 @@ folder <- "C:\\Users\\nj350\\OneDrive - Nova Southeastern University\\Documents\
 
 files <- list.files(folder, full.names = T)
 
-#creates a file 'nc' which contains all of the extracted data from the netcdf, if netcdf4 file use nc_open and ncvar_get
+#creates a file 'nc' which contains all of the extracted data from the netcdf, if netcdf4 file use nc_open and ncvar_get, this prints all files, search through a file to find the variable names of interest
 for(file in files) {
  nc <- open.nc(file)
   print.nc(nc)
