@@ -48,6 +48,8 @@ colnames(chl.day) <- c("Longitude", "Latitude", "Chlor_a")
 head(chl.day)
 summary(chl.day)
 
+write.csv(chl.day, file = "Chlor a.csv", row.names = F)
+
 ```
 
 # Multiple files within a folder
