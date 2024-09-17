@@ -33,7 +33,7 @@ chl<- var.get.nc(ncin, "chlor_a")
 chlvec<- as.vector(chl)
 
 #expand.grid plots every variable against each other therefore giving each data point, lat and lon (converts to long format)
-lonlat<- as.matrix(expand.grid(lon, lat))
+lonlat<- data.frame(expand.grid(lon, lat))
 
 #create a matrix with longitude, latitude and environ variable
 chl.day <- cbind(lonlat, chlvec)
@@ -52,7 +52,7 @@ summary(chl.day)
 
 # Multiple files within a folder
 
-```{r, results = 'hide'}
+```{r, results='hide'}
 
 rm(list= ls())
 
@@ -60,7 +60,7 @@ folder <- "C:\\Users\\nj350\\OneDrive - Nova Southeastern University\\Documents\
 
 files <- list.files(folder, full.names = T)
 
-#creates a file 'nc' which contains all of the extracted data from the netcdf, if netcdf4 file use nc_open and ncvar_get, this prints all files, search through a file to find the variable names of interest
+#creates a file 'nc' which contains all of the extracted data from the netcdf, if netcdf4 file use nc_open and ncvar_get
 for(file in files) {
  nc <- open.nc(file)
   print.nc(nc)
@@ -84,7 +84,7 @@ colnames(df) <- headers
 #for each file in the folder perform the following steps
 #1. find length of data
 #2. create data frame
-#3.add variables and global attributes to columns
+#3.add variables and global attributes to columns - note that in some instance there will be a scale factor to multiply the variable by
 #4.merge data frame with our blank data frame previously created
 
 for(file in files) {
@@ -135,7 +135,6 @@ df <- df %>%
   na.omit
 
 ```
-
 # Option to add scale factor if needed, note you may need to add an offset as well
 
 ```{r}
@@ -145,6 +144,7 @@ df$offset <- 65.5
 df$value <- (df$par * df$scale_factor)+df$offset
 
 ```
+
 
 # Write Data
 
@@ -163,5 +163,168 @@ annual.chl <- df %>%
   summarise(Max.chl = max(chlor_a), 
             Mean_chl = mean(chlor_a),
             sd_chl = sd(chlor_a))
+
+```
+
+# NOAA Degree Heating Weeks
+
+```{r}
+
+#open single file, if netcdf4 file use nc_open and ncvar_get
+ncin <- open.nc("C:\\Users\\nj350\\OneDrive - Nova Southeastern University\\Documents\\Grants and Funding\\2024\\DEP CPR\\Jones_Fuess\\Data\\Temperature\\\\DHW\\ct5km_dhw_v3.1_20140724.NC", write=FALSE)
+
+print.nc(ncin)
+
+# search within the netcdf file to find the variables of interest
+
+lat<-var.get.nc(ncin, "lat")
+lon<-var.get.nc(ncin, "lon")
+dhw<- var.get.nc(ncin, "degree_heating_week")
+
+#as this data is stored in wide format e.g., there's a matrix with lat on y and lon on x, with chl values in box, convert to long format
+dhwvec<- as.vector(dhw)
+#scale vector
+dhw.scaled <- dhwvec*0.01
+
+#expand.grid plots every variable against each other therefore giving each data point, lat and lon (converts to long format)
+lonlat<- data.frame(expand.grid(lon, lat))
+
+#create a matrix with longitude, latitude and environ variable
+dhw.day <- cbind(lonlat, dhw.scaled)
+
+#remove files to reduce data storage
+rm(lonlat)
+rm(dhwvec)
+rm(dhw.scaled)
+rm(ncin)
+dhw.day <- na.omit(dhw.day)
+colnames(dhw.day) <- c("Longitude", "Latitude", "DHW")
+
+head(dhw.day)
+summary(dhw.day)
+
+```
+
+# Extracting data from HYCOM
+
+```{r}
+
+#open single file, if netcdf4 file use nc_open and ncvar_get
+ncin <- open.nc("C:\\Users\\nj350\\OneDrive - Nova Southeastern University\\Documents\\Grants and Funding\\2024\\DEP CPR\\Jones_Fuess\\Data\\HYCOM\\2019-2022\\2019_2020.NC", write=FALSE)
+
+print.nc(ncin)
+
+# search within the netcdf file to find the variables of interest
+
+lat<-var.get.nc(ncin, "lat")
+lon<-var.get.nc(ncin, "lon")
+time<-var.get.nc(ncin, "time")
+salinity<- var.get.nc(ncin, "salinity")
+
+#as this data is stored in wide format e.g., there's a matrix with lat on y and lon on x, with chl values in box, convert to long format
+salvec<- as.vector(salinity)
+
+#expand.grid plots every variable against each other therefore giving each data point, lat and lon (converts to long format)
+lonlattime<- data.frame(expand.grid(lon, lat, time))
+
+#create a matrix with longitude, latitude and environ variable
+sal.day <- cbind(lonlattime, salvec)
+
+#remove files to reduce data storage
+rm(lonlattime)
+rm(salvec)
+rm(ncin)
+
+sal.day <- na.omit(sal.day)
+colnames(sal.day) <- c("Longitude", "Latitude", "Time", "Salinity")
+
+#sal.day$Year <- "2015" #add the year
+
+#convert date from days since 1900 to correct date
+sal.day$Date <- as.Date(sal.day$Time, origin = "2000-01-01 00:00:00") 
+
+head(sal.day)
+summary(sal.day)
+
+sal.day$value <- (sal.day$Salinity * 0.00100000004749745)+20
+
+```
+
+
+```
+
+# Extracting multiple data from HYCOM
+
+```{r}
+
+rm(list= ls())
+
+folder <- "C:\\Users\\nj350\\OneDrive - Nova Southeastern University\\Documents\\Grants and Funding\\2024\\DEP CPR\\Jones_Fuess\\Data\\HYCOM\\2019-2022"
+
+files <- list.files(folder, full.names = T)
+
+#extracts specific variables from the data frame that are of interest and create a blank data frame 
+
+lat <- "lat" 
+    
+lon <- "lon"
+
+time <- "time"
+
+var <- "salinity"
+
+headers <- c(lat, lon, time, var)
+
+#set up data.frame to use as final data.frame (needed for looping as each iteration will replace data in the newdf)
+df <- data.frame(matrix(ncol = length(headers), nrow = 0))
+colnames(df) <- headers
+
+#for each file in the folder perform the following steps
+#1. find length of data
+#2. create data frame
+#3.add variables and global attributes to columns - note that in some instance there will be a scale factor to multiply the variable by
+#4.merge data frame with our blank data frame previously created
+
+for(file in files) {
+  nc <- open.nc(file)
+  
+  sal.vec <- as.vector(var.get.nc(nc, "salinity"))
+  num_df <- length(sal.vec)
+  rm(sal.vec)
+  
+  newdf <- data.frame(matrix(ncol = length(headers), nrow = num_df))
+  colnames(newdf) <- headers
+  
+  for (variable in lat) {
+    
+    newdf[variable] <-as.vector(var.get.nc(nc, lat))
+  }
+  
+   for (variable in lon) {
+    
+    newdf[variable] <-as.vector(var.get.nc(nc, lon))
+   }
+  
+   for (variable in time) {
+    
+    newdf[variable] <-as.vector(var.get.nc(nc, time))
+   }
+  
+   for (variable in var) {
+ 
+      newdf[variable] <-as.vector(var.get.nc(nc, "salinity"))
+  }
+  
+  df <- merge(df, newdf, all=TRUE)
+}  
+
+df <- na.omit(df)
+colnames(df) <- c("Longitude", "Latitude", "Time", "Salinity")
+
+#convert date from days since 1900 to correct date
+df$Date <- as.Date(df$Time, origin = "2000-01-01 00:00:00") 
+
+head(df)
+summary(df)
 
 ```
